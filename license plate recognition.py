@@ -20,7 +20,7 @@ def readimage(imagename,imageflag,showflage):
     #还可以根据读图的内容来进行异常判断，图像内容为none则代表读图失败
     try:
         print("读图成功")
-        if(showflage==True):
+        if(showflage):
             cv2.imshow("image",image)
             print("显示当前图像")
             cv2.waitKey(0)
@@ -46,22 +46,33 @@ def imagelocation(image):
     """
     print("灰度处理")
     gray_image = cv2.cvtColor(image,cv2.COLOR_BGR2GRAY)
-    # cv2.imshow("gray_image",gray_image)
+    cv2.imshow("gray_image",gray_image)
     # cv2.waitKey(0)
     # cv2.destroyAllWindows()
     print("图像降噪：高斯滤波")
-    gb_image = cv2.GaussianBlur(gray_image,(5,5),0)
+    gb_image = cv2.GaussianBlur(gray_image,(7,7),0)
     # cv2.imshow("gb_image",gb_image)
     # cv2.waitKey(0)
     # cv2.destroyAllWindows()
-    # print("形态学处理：开操作")
-    #先进行腐蚀再进行膨胀
-    op_kernel = cv2.getStructuringElement(cv2.MORPH_RECT,(3,3))
-    eroded_image = cv2.erode(gb_image,op_kernel)
-    cv2.imshow("eroded_image",eroded_image)
-    op_kernel = cv2.getStructuringElement(cv2.MORPH_RECT, (5, 5))
-    dilated_image = cv2.dilate(eroded_image,op_kernel)
+    print("边缘检测")
+    # edge_image = cv2.Canny(gb_image, 250, 255)
+    x_image = cv2.Sobel(gb_image,cv2.CV_16S,1,0)
+    y_image = cv2.Sobel(gb_image,cv2.CV_16S,0,1)
+    x_image = cv2.convertScaleAbs(x_image)
+    y_image = cv2.convertScaleAbs(y_image)
+    edge_image = cv2.addWeighted(x_image, 1, y_image, 0.1, 0)
+    cv2.imshow("edge_image", edge_image)
+    print("形态学处理：开操作")
+    # 先进行腐蚀再进行膨胀
+    op_kernel = cv2.getStructuringElement(cv2.MORPH_RECT, (3, 3))
+    dilated_image = cv2.dilate(edge_image,op_kernel)
     cv2.imshow("dilated_image", dilated_image)
+    op_kernel = cv2.getStructuringElement(cv2.MORPH_RECT, (3, 3))
+    eroded_image = cv2.erode(dilated_image, op_kernel)
+    cv2.imshow("eroded_image", eroded_image)
+    print("二值化")
+    ret, bw_image = cv2.threshold(eroded_image, 127, 255, cv2.THRESH_BINARY)
+    cv2.imshow("bw_image", bw_image)
     cv2.waitKey(0)
     cv2.destroyAllWindows()
 
